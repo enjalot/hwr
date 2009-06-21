@@ -3,14 +3,15 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
     <title>{% block title %}Tegaki-db{% endblock %}</title>
+    {% block extrahead %} {% endblock %}
 </head>
 
-<body>
+<body onload="{% block onload %}{% endblock %}">
     <div id="sidebar">
         {% block sidebar %}
         <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/news/">News</a></li>
+            <li><a href="/tegaki/">Home</a></li>
+            <li><a href="/tegaki/news/">News</a></li>
         </ul>
         {% endblock %}
     </div>

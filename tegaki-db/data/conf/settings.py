@@ -10,13 +10,14 @@ ADMINS = (
 MANAGERS = ADMINS
 
 DATABASE_ENGINE = 'postgresql_psycopg2'
-DATABASE_NAME = 'tegakidb'
+DATABASE_NAME = 'tegaki'
 DATABASE_USER = 'tegaki'
-DATABASE_PASSWORD = 'shufa_TEGAKI'
+DATABASE_PASSWORD = 'somepassword'
 DATABASE_HOST = 'localhost'
 DATABASE_PORT = ''
 
 CUSTOM_USER_MODEL = 'users.TegakiUser'
+
 
 # Local time zone for this installation. Choices can be found here:
 # http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE
@@ -48,7 +49,7 @@ MEDIA_URL = 'http://localhost/static/'
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+ADMIN_MEDIA_PREFIX = '/static/media/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = 'secret-key'
@@ -70,6 +71,10 @@ ROOT_URLCONF = 'tegakidb.urls'
 
 TEMPLATE_DIRS = (
     '/vol/shufa/hwr/tegaki-db/data/templates/',
+)
+
+FIXTURE_DIRS = (
+    '/vol/shufa/fixtures/tegakidb/',
 )
 
 INSTALLED_APPS = (
