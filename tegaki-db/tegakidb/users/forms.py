@@ -6,13 +6,14 @@ from django.contrib.auth.models import User
 
 #form for editing tegaki users
 class TegakiUserForm(forms.ModelForm):
+
     class Meta:
         model = TegakiUser
         exclude = ('user',)
 
     def __init__(self, *args, **kwargs):
         super(TegakiUserForm, self).__init__(*args, **kwargs)
-        self.fields['lang'].label = "Language"
+        #self.fields['lang'].label = "Language"
         try:
             self.fields['n_handwriting_samples'].label = "# of Handwriting Samples"
         except:

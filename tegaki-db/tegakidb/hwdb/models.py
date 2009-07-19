@@ -11,14 +11,17 @@ from datetime import datetime
 
 
 class CharacterSet(models.Model):
+    id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=30)
-    lang = models.ForeignKey(Language)
+    lang = models.CharField(max_length=10)      #subtag of language
     description = models.CharField(max_length=255)
     # characters is a string representation of character code lists
     # and/or character code ranges.
     # e.g. 8,10..15,17 is equivalent to 8,10,11,12,13,14,15,17
     characters = models.TextField()
-    user = models.ForeignKey(User,blank=True, null=True)
+    #user = models.ForeignKey(User,blank=True, null=True)
+    user_id = models.CharField(max_length=255, blank=True) #Author of charset
+    user_display = models.CharField(max_length=255)     #display name of author
     public = models.BooleanField(default=True) 
 
     @staticmethod
@@ -40,6 +43,14 @@ class CharacterSet(models.Model):
             else:
                 ret.append(arr)
         return ret
+
+
+    def get_string_from_array(list, ord=True):
+        """
+        Takes in a python list of characters (unicode ordinals if ord=True, utf8 representations otherwise)
+        """
+        pass
+
 
     def contains(self, char_code):
         """
@@ -104,29 +115,42 @@ class CharacterSet(models.Model):
 
 admin.site.register(CharacterSet)
 
-class Character(models.Model):
-    lang = models.ForeignKey(Language)
-    unicode = models.IntegerField()
-    n_correct_handwriting_samples = models.IntegerField(default=0)
-    n_handwriting_samples = models.IntegerField(default=0)
-    
+
+class HandWritingSample(models.Model):
+    #character fields
+    id = models.AutoField(primary_key=True)             #this will be a unique hash
+    unicode = models.IntegerField(null=True)            #Unicode ordinal for the character
+    lang = models.CharField(max_length=10)              #subtag of language
+    data = models.TextField()                           #coordinate data describing the sample
+    data_format = models.CharField(max_length=255)      #('xml', 'json', 'sexp', etc)
+    compressed = models.IntegerField(default=0)         #(NON_COMPRESSED=0, GZIP=1, BZ2=2)
+
+    #meta data
+    date = models.DateTimeField(default=datetime.today())       #date created
+    user_id = models.CharField(max_length=255, blank=True)      #uniqueness implied, probably a hash
+    user_display = models.CharField(max_length=255, blank=True) #display name, uniqueness not implied
+    user_level = models.IntegerField(null=True)                 #proficiency level (in this lang)
+    domain = models.CharField(max_length=255, blank=True)       #what domain the sample was submitted from
+    device_used = models.IntegerField(default=0)                #(MOUSE, TABLET, PHONE, PDA, TOUCHSCREEN)
+
     def __unicode__(self):      #this is the display name
-        return unichr(self.unicode)#.encode("UTF-8") 
+        return self.utf8()
 
     def utf8(self):
         return unichr(self.unicode)
 
-admin.site.register(Character)
+admin.site.register(HandWritingSample)
 
-class HandWritingSample(models.Model):
-    character = models.ForeignKey(Character)
-    user = models.ForeignKey(User)
-    data = models.TextField()
-    compressed = models.IntegerField(default=0) #(NON_COMPRESSED=0, GZIP=1, BZ2=2)
-    date = models.DateTimeField(default=datetime.today())
-    n_proofread = models.IntegerField(default=0)
-    proofread_by = models.ManyToManyField(TegakiUser, related_name='tegaki_user', blank=True)
-    device_used = models.IntegerField(default=0) #(MOUSE, TABLET, PDA)
+class Validation(models.Model):
+    """
+    A Validation is performed on a HandWritingSample, want to 
+    """
+    id = models.AutoField(primary_key=True)             #will be unique hash
+    sample_id = models.IntegerField()                   #will be the unique identifying hash of the hws
+    user = models.CharField(max_length=255)             #the proofreader
+    user_display = models.CharField(max_length=255)     #proofreader's display name
+    user_level = models.IntegerField()                  #proficiency level of the user
+
     model = models.BooleanField(default=False)
     stroke_order_incorrect = models.BooleanField(default=False)
     stroke_number_incorrect = models.BooleanField(default=False)
@@ -134,7 +158,5 @@ class HandWritingSample(models.Model):
     wrong_spacing = models.BooleanField(default=False)
     client = models.TextField(blank=True)
 
-    def __unicode__(self):      #this is the display name
-        return self.character.__unicode__()
 
-admin.site.register(HandWritingSample)
+

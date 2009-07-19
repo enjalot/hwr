@@ -83,8 +83,7 @@ def user_list_datagrid(request):
         djob['user__username'] = u.user.username
         if u.country:
             djob['country'] = u.country
-        if u.lang:
-            djob['lang__description'] = u.lang.description
+        djob['proficiencies'] = u.proficiencies
         if u.description:
             djob['description'] = u.description
         if u.show_handwriting_samples:  #only if they publicly display their samples

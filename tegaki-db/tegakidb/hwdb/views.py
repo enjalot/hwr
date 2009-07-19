@@ -64,15 +64,16 @@ def input_submit(request):
 
     lang = request.session['current_charset'].lang
 
-    try:
-        tdbChar = Character.objects.get(unicode=uni)  #this is the Character from the database
-    except:
-        tdbChar = Character(lang=lang, unicode=uni, n_handwriting_samples=1)
-        tdbChar.save()
-    w = HandWritingSample(character=tdbChar, user=user, data=writing.to_xml())  #minimum fields needed to store
+    data = {'unicode':uni, 'lang':lang, 'data':writing.to_xml(), 'data_format':'xml',
+     #'compressed':0
+     'user':str(user.id), 'user_display':user.username, 'user_level':user.get_profile().get_proficiency(lang),
+     #'domain':settings.DOMAIN
+    }
+    print data
+    w = HandWritingSample(unicode=uni, lang=lang, data=writing.to_xml(),
+                            data_format='xml', user_id=user.id, user_display=user.username,
+                            user_level=user.get_profile().get_proficiency(lang))
     w.save()
-    tdbChar.n_handwriting_samples += 1
-    tdbChar.save()
     tu = user.get_profile()
     if tu.n_handwriting_samples:
         tu.n_handwriting_samples += 1
@@ -95,16 +96,20 @@ def samples_datagrid(request):
         djob = {}
         #'id', 'user__username', 'country', 'lang', 'description', 'n_handwriting_samples'
         djob['id'] = s.id
-        djob['character__utf8'] = s.character.utf8()
-        djob['character__lang__description'] = s.character.lang.description
+        djob['utf8'] = s.utf8()
+        djob['lang'] = Language.objects.get(subtag=s.lang).description
         djob['date'] = s.date
-        djob['user__username'] = s.user.username
-        if s.user.get_profile().show_handwriting_samples or request.user == s.user: 
-            #only if they publicly display this charset
-            #or it's their charset
-            dojo_obs += [djob]
+        djob['user_display'] = s.user_display
+        if s.user_id:
+            su = User.objects.get(id=s.user_id)
+            if su.get_profile().show_handwriting_samples or request.user == su: 
+                #only if they publicly display this charset
+                #or it's their charset
+                dojo_obs += [djob]
+            else:
+                num = num -1
         else:
-            num = num -1
+            dojo_obs += [djob]
     return to_dojo_data(dojo_obs, identifier='id', num_rows=num)
 
 
@@ -113,14 +118,16 @@ def samples_datagrid(request):
 def view_sample(request):
     id = request.REQUEST.get('id')
     sample = get_object_or_404(HandWritingSample, id=id)
-    if sample.user == request.user:
-        pass    #no editing of samples for now
-    elif not request.user.get_profile().show_handwriting_samples:  
-        #check that people don't try to see private samples
-        return HttpResponseRedirect(reverse("hwdb-samples"))
+    if sample.user_id:
+        user = User.objects.get(id=sample.user_id)
+        if user == request.user:
+            pass    #no editing of samples for now
+        elif not user.get_profile().show_handwriting_samples:  
+            #check that people don't try to see private samples
+            return HttpResponseRedirect(reverse("hwdb-samples"))
 
     char = character.Character()
-    char.set_utf8(sample.character)
+    char.set_utf8(sample.utf8())
     #here we should actually check to see if sample.data is compressed first
     xml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><character>%s</character>" % sample.data
     char.read_string(xml) #later need to check for compression
@@ -140,7 +147,8 @@ def create_charset(request):
         form = CharacterSetForm(request.POST)
         if form.is_valid():
             charset = form.save()
-            charset.user = request.user #to be changed later where admins can assign users
+            charset.user = request.user.id #to be changed later where admins can assign users
+            charset.user_display = request.user.username
             charset.save()
             request.session['current_charset'] = charset
             return HttpResponseRedirect(reverse("hwdb-charsets")) #TODO: add support for next redirection
@@ -166,19 +174,24 @@ def charset_datagrid(request):
     ### need to hand pick fields from TegakiUser, if some are None, need to pass back empty strings for dojo
     dojo_obs = []
     charsets, num = datagrid_helper(CharacterSet, request)
+    #need to fix search on lang (CharacterSet only stores subtag, but we display description)
+    #might need to custom write datagrid_helper
+
     for c in charsets:
         djob = {}
         #'id', 'user__username', 'country', 'lang', 'description', 'n_handwriting_samples'
         djob['id'] = c.id
         djob['name'] = c.name
-        djob['lang__description'] = c.lang.description
+        #here we trust that the charset lang exists
+        djob['lang'] = Language.objects.get(subtag=c.lang).description
         djob['description'] = c.description
         djob['random_char'] = unichr(c.get_random())
         djob['characters'] = c.characters       #might want to do something else for display
-        if c.user:
-            djob['user__username'] = c.user.username
-        if c.public or request.user == c.user:  #only if they publicly display this charset
-                                                #or it's their charset
+        if c.user_display:
+            djob['user_display'] = c.user_display
+        if c.public or (c.user_id and request.user == User.objects.get(id=c.user_id)):  
+            #only if they publicly display this charset
+            #or it's their charset. this logic will need to be rethaught (more fine grained charset control)
             dojo_obs += [djob]
         else:
             num = num -1

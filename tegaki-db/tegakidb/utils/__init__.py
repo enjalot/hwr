@@ -1,7 +1,6 @@
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 
-
 def render_to(template_name):
     def renderer(func):
         def wrapper(request, *args, **kw):
@@ -22,7 +21,7 @@ def base_url(request):
 
 
 ### Dojango helper for our custom views ###
-from django.db import models
+#from django.db import models
 from dojango.views import AVAILABLE_OPTS
 import operator
 
@@ -36,8 +35,9 @@ def datagrid_helper(model, request):
     if request.GET.has_key('sort'):
         target = target.order_by(request.GET['sort'])
 
+    print models
     if request.GET.has_key('search') and request.GET.has_key('search_fields'):
-        ored = [models.Q(**{str(k).strip(): str(request.GET['search'])} ) for k in request.GET['search_fields'].split(",")]
+        ored = [django.db.models.Q(**{str(k).strip(): str(request.GET['search'])} ) for k in request.GET['search_fields'].split(",")]
         target = target.filter(reduce(operator.or_, ored))
 
     # custom options passed from "query" param in datagrid

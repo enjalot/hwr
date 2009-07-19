@@ -18,9 +18,9 @@
 <div class="datagrid">
     {% datagrid %}
         json_store_url = '{% url hwdb-charset-datagrid %}'
-        list_display = ('name','lang__description', 'description', 'random_char', 'characters', 'user__username')
-        label = { 'user__username': 'User', 'lang__description':'Language', 'description':'Description', 'name':'Name', 'random_char':'Random Character', 'characters':'Characters'}
-        search = ('user__username__icontains', 'lang__description__icontains', 'description__icontains', 'name__icontains', 'characters__icontains')
+        list_display = ('name','lang', 'description', 'random_char', 'characters', 'user_display')
+        label = { 'user_display': 'User', 'lang':'Language', 'description':'Description', 'name':'Name', 'random_char':'Random Character', 'characters':'Characters'}
+        search = ('user_display__icontains', 'lang__icontains', 'description__icontains', 'name__icontains', 'characters__icontains')
         nosort = ['description', 'random_char', 'characters']
         height='500px'
         id='charset'
